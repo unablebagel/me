@@ -1,0 +1,520 @@
+---
+---
+
+<div class="mockup-wrapper" data-seat-booking>
+<div class="mode-selector">
+    <button class="mode-btn active" type="button" data-mode="normal">Normal Mode</button>
+    <button class="mode-btn" type="button" data-mode="divider">Divider Mode</button>
+    <button class="mode-btn" type="button" data-mode="safe">Safe Distancing</button>
+  </div>
+
+  <section id="demo">
+    <div class="section-label">Interactive Sandbox</div>
+    <div class="demo-panel">
+      <div class="demo-header">
+        <span class="demo-title" id="mode-title">Normal Mode Simulation</span>
+        <span class="demo-badge">Interactive</span>
+      </div>
+      <div class="seat-area">
+        <div class="seat-controls">
+          <label>Rows <input type="number" id="rows-input" value="6" min="3" max="10"></label>
+          <label>Cols <input type="number" id="cols-input" value="10" min="4" max="14"></label>
+          <label>Max <input type="number" id="max-input" value="3" min="1" max="5"></label>
+          
+          <div id="divider-controls" style="display:none; gap: 0.75rem; align-items: center;">
+            <label>Col Dividers <input type="text" id="col-dividers" value="4,7" placeholder="e.g. 4,7"></label>
+          </div>
+
+          <button class="btn-sm primary" onclick="generateSeats()">Regenerate</button>
+          <button class="btn-sm" onclick="resetAll()">Reset</button>
+        </div>
+        <div class="persons-row" id="persons-row"></div>
+        <div id="seat-grid-wrap" style="overflow-x:auto;"></div>
+        <div class="seat-controls" style="margin-top:1rem;">
+          <button class="btn-sm" onclick="confirmBooking()">✓ Confirm Selection</button>
+          <button class="btn-sm" onclick="undoLast()">↩ Undo Last</button>
+          <button class="btn-sm" onclick="nextPerson()">Next Person →</button>
+        </div>
+        <div class="seat-msg" id="seat-msg"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<style>
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    .mockup-wrapper {
+      --bg: var(--color-paper);
+      --bg-card: var(--color-surface);
+      --bg-surface: var(--color-line);
+      --text: var(--color-ink);
+      --text-muted: var(--color-ink-soft);
+      --text-faint: var(--color-ink-soft);
+      --border: var(--color-line);
+      --border-med: var(--color-line);
+      --green-fill: #EAF3DE;
+      --green-border: #3B6D11;
+      --green-text: #27500A;
+      --accent: var(--color-signal);
+      --font: var(--font-body);
+      --mono: var(--font-mono);
+      --radius: 10px;
+      --radius-lg: 14px;
+    }
+
+    :global(.dark) .mockup-wrapper {
+        --bg: var(--color-paper);
+        --bg-card: var(--color-surface);
+        --bg-surface: var(--color-line);
+        --text: var(--color-ink);
+        --text-muted: var(--color-ink-soft);
+        --text-faint: var(--color-ink-soft);
+        --border: var(--color-line);
+        --border-med: var(--color-line);
+        --green-fill: #17290d;
+        --green-border: #3B6D11;
+        --green-text: #97C459;
+        --accent: var(--color-signal);
+      }
+
+    .mockup-wrapper {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .container { max-width: 900px; margin: 0 auto; }
+
+    nav { margin-bottom: 3rem; display: flex; align-items: center; gap: 1rem; }
+    .back-link {
+      font-size: 13px; color: var(--text-muted); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 5px;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--text); }
+
+    h1 { font-size: 32px; font-weight: 300; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--text-muted); margin-bottom: 2rem; }
+
+    /* SECTIONS */
+    section { margin-bottom: 4rem; }
+    .section-label {
+      font-size: 10px; color: var(--text-faint);
+      letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 1.5rem;
+    }
+
+    /* MODE SELECTOR */
+    .mode-selector {
+      display: flex; gap: 4px; background: var(--bg-surface);
+      padding: 4px; border-radius: 99px; width: fit-content;
+      margin-bottom: 2rem; border: 0.5px solid var(--border);
+    }
+    .mode-btn {
+      font-size: 12px; padding: 6px 16px; border-radius: 99px;
+      border: none; background: transparent; color: var(--text-muted);
+      cursor: pointer; font-weight: 500; transition: all 0.15s;
+    }
+    .mode-btn.active {
+      background: var(--bg-card); color: var(--text);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    /* DEMO PANEL */
+    .demo-panel {
+      background: var(--bg-card);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    }
+    .demo-header {
+      padding: 0.9rem 1.25rem;
+      border-bottom: 0.5px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg-surface);
+    }
+    .demo-title { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+    .demo-badge {
+      font-size: 10px; padding: 2px 9px; border-radius: 99px;
+      background: var(--green-fill); color: var(--green-text);
+      border: 0.5px solid var(--green-border);
+    }
+
+    .seat-area { padding: 1.25rem; }
+    .seat-controls { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+    .seat-controls label { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+    .seat-controls input[type=number], .seat-controls input[type=text] {
+      font-size: 12px; padding: 3px 6px;
+      border: 0.5px solid var(--border-med); border-radius: 6px;
+      background: var(--bg-card); color: var(--text);
+    }
+    .seat-controls input[type=number] { width: 48px; }
+    .seat-controls input[type=text] { width: 80px; }
+    
+    .btn-sm {
+      font-size: 12px; padding: 5px 12px;
+      border: 0.5px solid var(--border-med); border-radius: 6px;
+      background: var(--bg-card); color: var(--text);
+      cursor: pointer; font-family: var(--font);
+      transition: all 0.12s; white-space: nowrap;
+    }
+    .btn-sm:hover { background: var(--bg-surface); }
+    .btn-sm.primary {
+      background: var(--text); color: var(--bg);
+      border-color: var(--text);
+    }
+
+    .persons-row { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; }
+    .person-btn {
+      font-size: 11px; padding: 4px 12px; border-radius: 99px;
+      border: 1.5px solid transparent; cursor: pointer;
+      font-weight: 500; transition: all 0.12s;
+    }
+    .person-btn.active { outline: 2px solid currentColor; outline-offset: 2px; }
+
+    .seat-grid { display: grid; gap: 4px; width: fit-content; padding: 10px; }
+    .seat {
+      width: 30px; height: 30px; border-radius: 5px;
+      border: 1px solid var(--border-med);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8.5px; color: var(--text-muted);
+      cursor: pointer; transition: all 0.1s;
+      background: var(--bg-card); user-select: none; font-weight: 500;
+      font-family: var(--mono);
+    }
+    .seat.available { background: var(--green-fill); border-color: var(--green-border); color: var(--green-text); }
+    .seat.selected { border-color: transparent; color: #fff; }
+    .seat.booked { border-color: transparent; color: #fff; opacity: 0.9; cursor: default; }
+    .seat.locked { background: var(--bg-surface); opacity: 0.4; cursor: not-allowed; border-style: dashed; }
+    .seat.root { box-shadow: 0 0 0 2px var(--text); }
+    .seat-msg { font-size: 11px; color: var(--text-muted); margin-top: 0.75rem; min-height: 16px; }
+
+    /* TECHNICAL STYLES */
+    .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem; }
+    .tech-card {
+      background: var(--bg-card); border: 0.5px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem;
+    }
+    .tech-card h3 { font-size: 14px; font-weight: 500; margin-bottom: 1rem; color: var(--text); }
+    .tech-card p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+    .code-block {
+      background: var(--bg-surface); border-radius: var(--radius);
+      padding: 1.25rem; font-family: var(--mono); font-size: 12px;
+      color: var(--text-muted); line-height: 1.6;
+      border: 0.5px solid var(--border); margin: 1rem 0;
+      overflow-x: auto;
+    }
+    .keyword { color: #cf222e; }
+    .comment { color: #6e7781; }
+
+    .complexity-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 4px 12px; border-radius: 99px; background: var(--bg-surface);
+      font-size: 12px; font-weight: 500; color: var(--text);
+      border: 0.5px solid var(--border); margin-right: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .tech-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Astro scopes component CSS by adding an attribute to authored markup.
+       Seats and person chips are created in the browser, so they do not get
+       that attribute. Keep their selectors global, but limit them to this
+       demo's root to preserve component isolation. */
+    [data-seat-booking] :global(.person-btn) {
+      font-size: 11px; padding: 4px 12px; border-radius: 99px;
+      border: 1.5px solid transparent; cursor: pointer;
+      font-weight: 500; transition: all 0.12s;
+    }
+    [data-seat-booking] :global(.person-btn.active) { outline: 2px solid currentColor; outline-offset: 2px; }
+    [data-seat-booking] :global(.seat-grid) { display: grid; gap: 4px; width: fit-content; padding: 10px; }
+    [data-seat-booking] :global(.seat) {
+      width: 30px; height: 30px; border-radius: 5px;
+      border: 1px solid var(--border-med); display: flex;
+      align-items: center; justify-content: center; font-size: 8.5px;
+      color: var(--text-muted); cursor: pointer; transition: all 0.1s;
+      background: var(--bg-card); user-select: none; font-weight: 500;
+      font-family: var(--mono);
+    }
+    [data-seat-booking] :global(.seat.available) { background: var(--green-fill); border-color: var(--green-border); color: var(--green-text); }
+    [data-seat-booking] :global(.seat.selected) { border-color: transparent; color: #fff; }
+    [data-seat-booking] :global(.seat.booked) { border-color: transparent; color: #fff; opacity: 0.9; cursor: default; }
+    [data-seat-booking] :global(.seat.locked) { background: var(--bg-surface); opacity: 0.4; cursor: not-allowed; border-style: dashed; }
+    [data-seat-booking] :global(.seat.root) { box-shadow: 0 0 0 2px var(--text); }
+  
+</style>
+
+<script is:inline>
+
+  // This component is rendered from MDX, so keep all DOM lookup inside its
+  // own root instead of relying on page-level IDs.
+  const seatBookingRoot = document.querySelector('[data-seat-booking]');
+
+  const personColors = ['#378ADD','#D85A30','#1D9E75','#D4537E','#BA7517'];
+  const personBgLight = ['#E6F1FB','#FAECE7','#E1F5EE','#FBEAF0','#FAEEDA'];
+
+  let rows = 6, cols = 10, maxPerPerson = 3;
+  let currentPerson = 0, totalPersons = 3;
+  let seats = [], personSeats = [], selectedSeats = [], rootSeat = null;
+  let currentMode = 'normal';
+
+  function setMode(mode) {
+    currentMode = mode;
+    seatBookingRoot.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.textContent.toLowerCase().includes(mode));
+    });
+    
+    seatBookingRoot.querySelector('#divider-controls').style.display = (mode === 'divider') ? 'flex' : 'none';
+    seatBookingRoot.querySelector('#mode-title').textContent = mode.charAt(0).toUpperCase() + mode.slice(1) + " Mode Simulation";
+    
+    const techDesc = seatBookingRoot.querySelector('#mode-tech-desc');
+    const logicPreview = seatBookingRoot.querySelector('#logic-preview');
+
+    // These explanatory elements exist in the standalone demo, but not in
+    // the compact MDX embed. Their absence must not prevent mode changes.
+    if (techDesc && logicPreview) {
+      if (mode === 'normal') {
+        techDesc.innerHTML = "<strong>Normal Mode:</strong> Uses a standard BFS frontier to ensure orthogonal adjacency. Each selection expands the 'frontier' of valid seats.";
+        logicPreview.innerHTML = `<span class="comment">// Standard Adjacency</span>\n<span class="keyword">return</span> [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(...)`;
+      } else if (mode === 'divider') {
+        techDesc.innerHTML = "<strong>Divider Mode:</strong> Restricts horizontal expansion across user-defined lane dividers. Logic: <code>if (hasDividerBetween(a, b)) skip;</code>";
+        logicPreview.innerHTML = `<span class="comment">// Divider-aware Adjacency</span>\n<span class="keyword">if</span> (isLeft(nc) && currentSeat.hasLeftDivider) <span class="keyword">continue</span>;`;
+      } else if (mode === 'safe') {
+        techDesc.innerHTML = "<strong>Safe Distancing:</strong> Confirming a booking triggers a secondary traversal to lock all surrounding neighbors (Front, Back, Left, Right).";
+        logicPreview.innerHTML = `<span class="comment">// Safe Distancing Lock</span>\nbookedSeats.forEach(s => getNeighbors(s).forEach(n => n.locked = true));`;
+      }
+    }
+
+    generateSeats();
+  }
+
+  function generateSeats() {
+    rows = Math.min(10, Math.max(3, parseInt(seatBookingRoot.querySelector('#rows-input').value) || 6));
+    cols = Math.min(14, Math.max(4, parseInt(seatBookingRoot.querySelector('#cols-input').value) || 10));
+    maxPerPerson = Math.min(5, Math.max(1, parseInt(seatBookingRoot.querySelector('#max-input').value) || 3));
+    
+    let colDivs = [];
+    if (currentMode === 'divider') {
+      colDivs = seatBookingRoot.querySelector('#col-dividers').value.split(',').map(s => parseInt(s.trim()));
+    }
+
+    currentPerson = 0;
+    selectedSeats = [];
+    rootSeat = null;
+    
+    seats = Array.from({length: rows}, (_, r) =>
+      Array.from({length: cols}, (_, c) => ({ 
+        row: r, col: c, state: 'empty', person: -1,
+        hasRightDivider: colDivs.includes(c + 1),
+        hasLeftDivider: colDivs.includes(c)
+      }))
+    );
+    
+    personSeats = Array.from({length: totalPersons}, () => []);
+    renderPersons();
+    renderGrid();
+    setMsg('Click any seat to begin booking for Person A.');
+  }
+
+  function renderPersons() {
+    const pr = seatBookingRoot.querySelector('#persons-row');
+    pr.innerHTML = '';
+    for (let i = 0; i < totalPersons; i++) {
+      const name = String.fromCharCode(65 + i);
+      const btn = document.createElement('button');
+      btn.className = 'person-btn' + (i === currentPerson ? ' active' : '');
+      btn.textContent = 'Person ' + name;
+      btn.style.background = personBgLight[i];
+      btn.style.color = personColors[i];
+      btn.style.borderColor = personColors[i];
+      btn.onclick = () => switchPerson(i);
+      pr.appendChild(btn);
+    }
+  }
+
+  function switchPerson(i) {
+    if (i === currentPerson) return;
+    if (selectedSeats.length > 0) { setMsg('Confirm or undo selection first.'); return; }
+    currentPerson = i;
+    rootSeat = personSeats[i].length > 0 ? personSeats[i][personSeats[i].length - 1] : null;
+    renderPersons();
+    updateAvailable();
+    renderGrid();
+  }
+
+  function renderGrid() {
+    const wrap = seatBookingRoot.querySelector('#seat-grid-wrap');
+    wrap.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'seat-grid';
+    
+    // Calculate columns including spacers
+    let gridCols = [];
+    for (let c = 0; c < cols; c++) {
+      gridCols.push('30px');
+      // If this seat has a right divider, add a spacer column
+      if (seats[0][c].hasRightDivider && c < cols - 1) {
+        gridCols.push('20px');
+      }
+    }
+    grid.style.gridTemplateColumns = gridCols.join(' ');
+    
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const s = seats[r][c];
+        const el = document.createElement('div');
+        el.className = 'seat';
+        el.textContent = String.fromCharCode(65 + r) + (c + 1);
+
+        if (s.state === 'booked') {
+          el.style.background = personColors[s.person];
+          el.style.borderColor = personColors[s.person];
+          el.classList.add('booked');
+        } else if (s.state === 'locked') {
+          el.classList.add('locked');
+        } else if (s.state === 'selected') {
+          el.style.background = personColors[currentPerson];
+          el.style.borderColor = personColors[currentPerson];
+          el.classList.add('selected');
+          if (rootSeat && rootSeat.row === r && rootSeat.col === c) el.classList.add('root');
+        } else if (s.state === 'available') {
+          el.classList.add('available');
+        }
+        el.onclick = () => clickSeat(r, c);
+        grid.appendChild(el);
+
+        // Add visual spacer element if divider exists
+        if (s.hasRightDivider && c < cols - 1) {
+          const spacer = document.createElement('div');
+          spacer.style.width = '20px';
+          grid.appendChild(spacer);
+        }
+      }
+    }
+    wrap.appendChild(grid);
+  }
+
+  function clickSeat(r, c) {
+    const s = seats[r][c];
+    if (s.state === 'booked' || s.state === 'locked') return;
+    const total = personSeats[currentPerson].length + selectedSeats.length;
+    if (total >= maxPerPerson && s.state !== 'selected') { setMsg('Max ' + maxPerPerson + ' seats reached.'); return; }
+    
+    if (s.state === 'available' || s.state === 'empty') {
+      if (selectedSeats.length === 0 && personSeats[currentPerson].length === 0) {
+        rootSeat = { row: r, col: c };
+        seats[r][c].state = 'selected';
+        selectedSeats.push({ row: r, col: c });
+      } else if (s.state === 'available') {
+        seats[r][c].state = 'selected';
+        selectedSeats.push({ row: r, col: c });
+      }
+      updateAvailable();
+      renderGrid();
+    }
+  }
+
+  function updateAvailable() {
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++)
+        if (seats[r][c].state === 'available') seats[r][c].state = 'empty';
+
+    const all = [...personSeats[currentPerson], ...selectedSeats];
+    if (all.length > 0 && all.length < maxPerPerson) {
+      const inList = (r, c) => all.some(s => s.row === r && s.col === c);
+      all.forEach(({ row, col }) => {
+        const cur = seats[row][col];
+        const neighbors = [
+          [row-1, col], [row+1, col], // Up, Down
+          [row, col-1, 'left'], [row, col+1, 'right'] // Left, Right
+        ];
+
+        neighbors.forEach(([nr, nc, dir]) => {
+          if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !inList(nr, nc)) {
+            const target = seats[nr][nc];
+            if (target.state !== 'empty' && target.state !== 'available') return;
+            
+            // Divider check
+            if (currentMode === 'divider') {
+              if (dir === 'left' && cur.hasLeftDivider) return;
+              if (dir === 'right' && cur.hasRightDivider) return;
+            }
+
+            target.state = 'available';
+          }
+        });
+      });
+    }
+  }
+
+  function confirmBooking() {
+    if (selectedSeats.length === 0) return;
+    selectedSeats.forEach(({ row, col }) => {
+      seats[row][col].state = 'booked';
+      seats[row][col].person = currentPerson;
+      personSeats[currentPerson].push({ row, col });
+    });
+    
+    if (currentMode === 'safe') {
+      applySafeDistancing(selectedSeats);
+    }
+
+    selectedSeats = [];
+    updateAvailable();
+    renderGrid();
+    setMsg('Confirmed seats for Person ' + String.fromCharCode(65 + currentPerson));
+  }
+
+  function applySafeDistancing(newBookings) {
+    newBookings.forEach(({row, col}) => {
+      [[row-1,col],[row+1,col],[row,col-1],[row,col+1]].forEach(([nr, nc]) => {
+        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+          const s = seats[nr][nc];
+          if (s.state === 'empty' || s.state === 'available') {
+            s.state = 'locked';
+          }
+        }
+      });
+    });
+  }
+
+  function undoLast() {
+    if (selectedSeats.length === 0) return;
+    const last = selectedSeats.pop();
+    seats[last.row][last.col].state = 'empty';
+    if (selectedSeats.length === 0 && personSeats[currentPerson].length === 0) rootSeat = null;
+    updateAvailable();
+    renderGrid();
+  }
+
+  function nextPerson() {
+    if (selectedSeats.length > 0) { setMsg('Confirm selection first.'); return; }
+    if (currentPerson < totalPersons - 1) {
+      currentPerson++;
+      rootSeat = null;
+      renderPersons();
+      updateAvailable();
+      renderGrid();
+      setMsg('Now booking for Person ' + String.fromCharCode(65 + currentPerson));
+    }
+  }
+
+  function resetAll() { generateSeats(); }
+  function setMsg(m) { seatBookingRoot.querySelector('#seat-msg').textContent = m; }
+
+  seatBookingRoot.querySelectorAll('[data-mode]').forEach((button) => {
+    button.addEventListener('click', () => setMode(button.dataset.mode));
+  });
+
+  generateSeats();
+
+</script>

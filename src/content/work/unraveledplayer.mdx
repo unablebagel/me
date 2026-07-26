@@ -1,0 +1,57 @@
+---
+title: UnraveledPlayer
+summary: Internship tooling draw multi-attacker scenarios on a network diagram to generate the synthetic alert data needed for testing attacker attribution. Live on Render.
+role: Developer
+date: 2026-07-01
+tags: [Internship, SIEM, Threat Modelling, Python, Live Demo]
+url: https://unraveledplayer.onrender.com/
+featured: true
+draft: false
+---
+
+import Button from '../../components/Button.astro';
+import UnraveledPlayerMockup from '../../components/mockups/UnraveledPlayerMockup.astro';
+import UnraveledPlayerChainMockup from '../../components/mockups/UnraveledPlayerChainMockup.astro';
+
+
+
+A visual editor I built during my internship to generate synthetic attack data. Instead of writing alert records by hand, I draw the scenario on a network diagram and the tool produces the alerts for me.
+
+<div class="mt-8 flex flex-wrap items-center gap-3">
+  <Button href="https://unraveledplayer.onrender.com/" variant="solid" class="px-4 py-1.5 text-xs leading-none">
+    Ready to Unravel?
+  </Button>
+  <span class="min-w-0 text-ink-soft text-xs italic max-w-[28rem]">
+    Hosted on Render's free tier, im broke. it can take up to a minute while the server wakes up, but at least the loading page is cool
+  </span>
+</div>
+
+## How I Got Here
+Hooray! I managed to score a part-time internship while tackling Year 2 Tri 3 at the same time. I was initially interested in red team related projects, but the interviewer told me their project is more blue team based. But whatever, this is no time to be a chooser. I gladly accepted it.
+
+## The Project
+Here's how it went. My project involves augmenting SIEM systems with a threat modelling tool. The tool analyses a system's architecture ahead of time and works out the attack paths an attacker could realistically take through it. However, the tool is static. It doesn't adapt to the enemy's behaviour or their ongoing attacks. And here's where I come in: my job is to look for ways to augment the SIEM system with this knowledge of potential attack paths, so that **operators can identify the intent of a real-time attacker and protect their system before the attacker reaches their goal**.
+
+In other words, we first analyse the alert data from the SIEM system and identify whether a system component is likely to be compromised. Then, based on the time series, we construct a narrative of what the attacker may have done. This narrative gets mapped to the identified potential attack paths to determine whether the system is currently under attack. If it is, we identify the next likely target of the attacker.
+
+Since APT data is hard to obtain, we had to use the [Unraveled dataset](https://gitlab.com/asu22/unraveled) as a stand-in for the SIEM feed.
+
+## Why I Built This
+Right now I'm at the **compromise state tracking** stage: keeping a running picture of which nodes in the system an attacker has gotten their hands on. Initially, I only planned to have a single state for each node in the topology. But once you consider that multiple attackers could be active at the same time, it makes more sense to have a multi-attacker compromise state tracker instead. That also meant implementing **multi-attacker attribution**, which is figuring out which attacker each incoming alert belongs to.
+
+The hard part was testing it. The Unraveled dataset contains a single APT campaign, so there was no multi-attacker data to validate the attribution logic against. My workaround was to create synthetic alerts manually in the backend code. I would picture an attack in my head, then type out every alert it would produce, field by field. It was slow, easy to get wrong, and hard to review once written. I spent countless hours drawing timelines on LucidChart and plotting out attacks frame by frame on PowerPoint.
+
+At some point I realised I was already imagining every scenario as attackers moving across a network diagram, and all the typing was just a clumsy translation of that picture into text. So tada, I decided to build a frontend where the picture itself is the input: **I draw the attack, and UnraveledPlayer writes the alerts.** (It also plays the attack sequence back in time order, which is where the Player in the name comes from).
+
+
+<UnraveledPlayerMockup />
+
+## How It Works
+
+<UnraveledPlayerChainMockup />
+
+## Under the Hood
+1. **A common alert schema in practice** - The generated alerts follow OCSF, an open standard for describing security events. This is the same shared data structure idea the wider project relies on, so anything built around that schema can consume this tool's output.
+2. **Deliberately lightweight** - The backend is plain Python with no third-party dependencies, and scenarios are saved in the browser rather than on the server. The server stays stateless, and the whole app deploys as a small Docker container on Render's free tier.
+3. **Tooling, not the research itself** - This frontend exists to speed up the actual work. The scenarios it produces feed directly into testing the multi-attacker state tracking and attribution logic.
+

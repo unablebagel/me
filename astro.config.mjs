@@ -2,15 +2,19 @@
 import { defineConfig, fontProviders } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
+import mdx from '@astrojs/mdx';
 
-// Replace with your production URL after deploying to Vercel / Netlify.
-// It powers the sitemap and the canonical / Open Graph URLs in BaseLayout.
-const SITE_URL = 'https://astro-starter-portfolio.vercel.app';
+// Powers the sitemap and the canonical / Open Graph URLs in BaseLayout.
+const SITE_URL = 'https://unablebagel.github.io';
+
+// GitHub Pages project-page deploy: served at unablebagel.github.io/me/.
+const BASE_PATH = '/me';
 
 export default defineConfig({
   site: SITE_URL,
+  base: BASE_PATH,
 
-  integrations: [sitemap()],
+  integrations: [sitemap(), mdx()],
 
   // Prefetches internal links on hover/viewport entry for near-instant navigation.
   prefetch: true,

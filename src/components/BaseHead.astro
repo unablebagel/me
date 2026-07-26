@@ -2,6 +2,8 @@
 import { ClientRouter } from 'astro:transitions';
 import { Font } from 'astro:assets';
 import { SITE } from '@/site.config';
+import { withBase } from '@/utils/url';
+import Analytics from '@vercel/analytics/astro'   // optional, remove if not using Vercel Analytics
 
 interface Props {
   title: string;
@@ -16,7 +18,7 @@ const fullTitle = pageTitle.includes(SITE.name)
   : `${pageTitle} · ${SITE.name}`;
 const description = pageDescription || SITE.description;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-const socialImage = new URL(image || '/og-image.png', Astro.site);
+const socialImage = new URL(image || withBase('/og-image.png'), Astro.site);
 ---
 
 {/* Global Metadata */}
@@ -32,7 +34,7 @@ const socialImage = new URL(image || '/og-image.png', Astro.site);
 <title>{fullTitle}</title>
 <meta name="title" content={fullTitle} />
 <meta name="description" content={description} />
-<link rel="sitemap" href="/sitemap-index.xml" />
+<link rel="sitemap" href={withBase('/sitemap-index.xml')} />
 
 {/* Open Graph / Facebook */}
 <meta property="og:type" content="website" />
@@ -49,11 +51,11 @@ const socialImage = new URL(image || '/og-image.png', Astro.site);
 <meta name="twitter:image" content={socialImage} />
 
 {/* Favicons */}
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-<link rel="icon" href="/favicon.ico" sizes="32x32" />
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-<link rel="manifest" href="/site.webmanifest" />
+<link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
+<link rel="icon" type="image/png" href={withBase('/favicon-96x96.png')} sizes="96x96" />
+<link rel="icon" href={withBase('/favicon.ico')} sizes="32x32" />
+<link rel="apple-touch-icon" sizes="180x180" href={withBase('/apple-touch-icon.png')} />
+<link rel="manifest" href={withBase('/site.webmanifest')} />
 
 {/* Optional */}
 <meta name="robots" content="index, follow" />

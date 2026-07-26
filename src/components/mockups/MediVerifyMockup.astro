@@ -1,0 +1,166 @@
+---
+---
+
+<div class="mockup-wrapper not-prose">
+<pre class="code-block" aria-label="ASCII comparison of genuine and counterfeit medicine boxes">         <span class="verified">GENUINE</span>                         <span class="counterfeit">COUNTERFEIT</span>
+
+  +--------------------+           +--------------------+
+  |  . MEDICURE  500mg |           |  . MEDICURE  500mg |
+  |  ----------------  |           |  ----------------  |
+  |  Batch: SG-2024-07 |           |  Batch: SG-2024-07 | <span class="counterfeit">← copied</span>
+  |  Exp:   12/2026    |           |  Exp:   12/2026    |
+  |                    |           |                    |
+  |  [#.#.]    [#.#.]  |           |  [#.#.]    [#.#.]  |
+  |  [.#.#]  . [.#.#]  |           |  [.#.#]  . [.#.#]  | <span class="counterfeit">← cloned QR</span>
+  |  [REG NO: P12847]  |           |  [REG NO: P12847]  | <span class="counterfeit">← forged</span>
+  +--------------------+           +--------------------+
+      ↑ on blockchain                  ↑ not on blockchain
+    <span class="verified">scan → verified ✓</span>                <span class="counterfeit">scan → no record ✗</span></pre>
+    <p class="caption">A counterfeit box is often visually identical — sharing the same batch, registration, and QR graphics. Its legitimacy cannot be determined by sight alone; it can only be confirmed by verifying the scan result against the blockchain record.</p>
+</div>
+
+<style>
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    .mockup-wrapper {
+      --bg: var(--color-paper);
+      --bg-card: var(--color-surface);
+      --bg-surface: var(--color-line);
+      --text: var(--color-ink);
+      --text-muted: var(--color-ink-soft);
+      --text-faint: var(--color-ink-soft);
+      --border: var(--color-line);
+      --border-med: var(--color-line);
+      --font: var(--font-body);
+      --mono: var(--font-mono);
+      --radius: 10px;
+      --radius-lg: 14px;
+      --teal: #1D9E75;
+      --coral: #D85A30;
+    }
+
+    :global(.dark) .mockup-wrapper {
+        --bg: var(--color-paper);
+        --bg-card: var(--color-surface);
+        --bg-surface: var(--color-line);
+        --text: var(--color-ink);
+        --text-muted: var(--color-ink-soft);
+        --text-faint: var(--color-ink-soft);
+        --border: var(--color-line);
+        --border-med: var(--color-line);
+        --teal: #2dbd8f;
+        --coral: #e06b40;
+      }
+
+    .mockup-wrapper {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 0;
+    }
+
+    .container { max-width: 900px; margin: 0 auto; }
+
+    nav { margin-bottom: 3rem; display: flex; align-items: center; gap: 1rem; }
+    .back-link {
+      font-size: 13px; color: var(--text-muted); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 5px;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--text); }
+
+    h1 { font-size: 32px; font-weight: 300; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; font-style: italic; font-size: 13px; }
+
+    /* BADGES */
+    .badge-row { display: flex; gap: 0.8rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 4px 12px; border-radius: 99px; background: var(--bg-surface);
+      font-size: 12px; font-weight: 500; color: var(--text);
+      border: 0.5px solid var(--border);
+    }
+
+    /* SECTIONS */
+    section { margin-bottom: 4rem; }
+    .section-label {
+      font-size: 10px; color: var(--text-faint);
+      letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 1.5rem;
+    }
+
+    /* ASCII BLOCK */
+    .code-block {
+      background: var(--bg-surface); border-radius: var(--radius);
+      padding: 1.25rem; font-family: var(--mono); font-size: 11.5px;
+      color: var(--text-muted); line-height: 1.55;
+      border: 0.5px solid var(--border); margin: 1rem 0;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .verified { color: var(--teal); }
+    .counterfeit { color: var(--coral); }
+
+    /* SUPPLY CHAIN */
+    .chain-strip {
+      display: flex; align-items: flex-start;
+      border: 0.5px solid var(--border); border-radius: var(--radius-lg);
+      overflow: hidden; margin: 1rem 0;
+    }
+    .chain-step {
+      flex: 1; padding: 1.25rem 1rem;
+      border-left: 0.5px solid var(--border);
+    }
+    .chain-step:first-child { border-left: none; }
+    .chain-num {
+      font-size: 10px; font-family: var(--mono); color: var(--text-faint);
+      letter-spacing: 0.2em; margin-bottom: 0.5rem; display: block;
+    }
+    .chain-name { font-size: 13px; font-weight: 500; margin-bottom: 0.25rem; }
+    .chain-desc { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+
+    /* CONTRIBUTIONS */
+    .contribution-list { list-style: none; }
+    .contribution-item {
+      display: flex; gap: 1.5rem; margin-bottom: 1.5rem;
+      padding-left: 1rem; border-left: 1.5px solid var(--border-med);
+    }
+    .contribution-num {
+      font-size: 11px; font-weight: 600; color: var(--text-faint);
+      text-transform: uppercase; width: 24px; flex-shrink: 0;
+      padding-top: 2px; font-family: var(--mono);
+    }
+    .contribution-content h4 { font-size: 14px; font-weight: 500; margin-bottom: 0.25rem; }
+    .contribution-content p { font-size: 13px; color: var(--text-muted); }
+
+    .caption {
+      font-size: 12px; color: var(--text-faint); line-height: 1.6;
+      max-width: 640px; margin-top: 0.75rem; font-style: italic;
+    }
+
+    /* WRITER'S NOTE */
+    .writer-note {
+      padding: 1.5rem;
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg-surface);
+    }
+    .writer-note-label {
+      font-size: 10px; font-family: var(--mono); color: var(--text-faint);
+      letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 1.25rem;
+    }
+    .writer-note p {
+      font-size: 13px; color: var(--text-muted); line-height: 1.85;
+      font-style: italic; margin-bottom: 0.9rem;
+    }
+    .writer-note p:last-child { margin-bottom: 0; }
+
+    @media (max-width: 600px) {
+      .chain-strip { flex-direction: column; }
+      .chain-step { border-left: none; border-top: 0.5px solid var(--border); }
+      .chain-step:first-child { border-top: none; }
+    }
+  
+</style>

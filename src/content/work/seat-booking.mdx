@@ -1,0 +1,41 @@
+---
+title: Seat Booking System
+summary: Tree-based seat validation with adjacency enforcement, divider lanes, and safe distancing mode. Built for a DSA assignment.
+role: Developer
+date: 2021-07-01
+tags: [Interactive, Tree Data Structure, BFS Algorithm]
+featured: false
+draft: false
+---
+
+import SeatBookingMockup from '../../components/mockups/SeatBookingMockup.astro';
+
+A technical deep dive into tree-based validation and BFS algorithms for complex seating constraints.
+
+## Interactive Sandbox
+
+
+<SeatBookingMockup />
+
+## Technical Implementation
+
+### Constraint Modeling
+
+- **Normal Mode:** Uses a standard BFS frontier to ensure orthogonal adjacency. Each selection expands the "frontier" of valid seats.
+- **Divider Mode:** Restricts horizontal expansion across user-defined lane dividers. Logic: `if (hasDividerBetween(a, b)) skip;`
+- **Safe Distancing:** Confirming a booking triggers a secondary traversal to lock all surrounding neighbors (Front, Back, Left, Right).
+
+### Complexity
+
+- **O(R × C) Time**
+- **O(R × C) Space**
+
+Validation re-runs on every click, ensuring zero-latency feedback for the user.
+
+```javascript
+// Standard Adjacency Logic
+function getNeighbors(r, c) {
+  return [[r-1,c],[r+1,c],[r,c-1],[r,c+1]]
+    .filter(([nr, nc]) => isInBounds(nr, nc));
+}
+```

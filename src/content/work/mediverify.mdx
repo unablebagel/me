@@ -1,0 +1,39 @@
+---
+title: MediVerify
+summary: Research proposal for a permissioned blockchain network to detect counterfeit pharmaceuticals in Singapore's e-commerce supply chain.
+role: Developer
+date: 2025-07-01
+tags: [Blockchain, Hyperledger Fabric, Supply Chain, Research]
+featured: false
+draft: false
+---
+
+import MediVerifyMockup from '../../components/mockups/MediVerifyMockup.astro';
+import MediVerifyChainMockup from '../../components/mockups/MediVerifyChainMockup.astro';
+
+Research proposal for a permissioned blockchain network to detect counterfeit pharmaceuticals in Singapore's e-commerce supply chain.
+
+## The Problem
+Counterfeit health products infiltrate Singapore's e-commerce platforms through gaps in current verification systems. Batch numbers, QR codes, and registration numbers can all be copied — making a counterfeit box visually identical to a genuine one. Existing tools are reactive: they catch fakes after the fact, not before the sale.
+
+**We proposed a permissioned blockchain network to enable tamper-proof, real-time pharmaceutical traceability — where every product in the supply chain can be verified against a shared, immutable record.**
+
+## Genuine vs. Counterfeit
+
+<MediVerifyMockup />
+
+## Traceability Pipeline
+
+<MediVerifyChainMockup />
+
+## Key Contributions
+1. **Literature Review:** Identified limitations in existing ICT verification systems — QR codes, batch tracking, marketplace enforcement — showing they are reactive rather than preventive.
+2. **Solution Design:** Proposed a permissioned blockchain using Hyperledger Fabric with hidden QR codes, allowing only verified participants to record or alter transactions.
+3. **Evaluation Framework:** Developed measurable success indicators — seizure rates, scan frequency, and investigation time — to assess real-world impact of the proposed system.
+
+> **Writer's Note**
+> Something I keep coming back to when I think about this project: this system is a tool for consumers, not a silver bullet. The idea is to give buyers a real way to check whether a product they're purchasing online is registered on the blockchain — to put that verification in their hands. That part matters. But the responsibility to actually use it, and to buy from verified sources in the first place, still falls on the person making the purchase. The system enables the check. It doesn't make the check for you.
+>
+> There are also real limits to what it can guarantee. Counterfeit can still exist — the blockchain only contains what's been logged to it, and a determined bad actor will eventually find ways around any verification layer. On the other side, a legitimate product from a manufacturer who simply isn't part of the network could fail verification entirely. That's a false negative, and it's just as problematic in its own way.
+>
+> I don't think these limitations mean the proposal isn't worth pursuing. I think it just means we should be honest about what it is: one extra signal for consumers to act on — not a complete answer, and not a reason to stop thinking critically about where your medicine comes from.

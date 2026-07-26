@@ -5,12 +5,12 @@ import Button from '@/components/Button.astro';
 import WorkRow from '@/components/WorkRow.astro';
 import SectionHeading from '@/components/SectionHeading.astro';
 import { SITE } from '@/site.config';
+import { withBase } from '@/utils/url';
 
 const allWork = await getCollection('work', ({ data }) => !data.draft);
 const sorted = [...allWork].sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-const featured = sorted.filter((entry) => entry.data.featured);
-const rest = sorted.filter((entry) => !entry.data.featured);
-const selected = [...featured, ...rest].slice(0, 5);
+const selectedIds = ['unraveledplayer', 'zonegraph'];
+const selected = sorted.filter((entry) => selectedIds.includes(entry.id));
 ---
 
 <BaseLayout title={SITE.name}>
@@ -25,11 +25,11 @@ const selected = [...featured, ...rest].slice(0, 5);
     </h1>
 
     <p class="text-ink-soft mt-6 max-w-md">
-      {SITE.role} — based on the work below, not a list of buzzwords.
+      {SITE.description}
     </p>
 
     <div class="mt-8 flex flex-wrap items-center gap-3">
-      <Button href="/work" variant="solid">View the work →</Button>
+      <Button href={withBase('/work')} variant="solid">View the work →</Button>
       <Button href="#contact" variant="ghost">Say hello</Button>
     </div>
   </section>
@@ -43,7 +43,7 @@ const selected = [...featured, ...rest].slice(0, 5);
       allWork.length > selected.length && (
         <div class="mt-6">
           <a
-            href="/work"
+            href={withBase('/work')}
             class="text-ink-soft hover:text-signal font-mono text-xs transition-colors"
           >
             View all {allWork.length} projects →
@@ -58,7 +58,7 @@ const selected = [...featured, ...rest].slice(0, 5);
     <p class="text-ink-soft max-w-xl">
       {SITE.description}
     </p>
-    <a href="/about" class="text-signal mt-4 inline-block font-mono text-xs hover:underline">
+    <a href={withBase('/about')} class="text-signal mt-4 inline-block font-mono text-xs hover:underline">
       More about how I work →
     </a>
   </section>

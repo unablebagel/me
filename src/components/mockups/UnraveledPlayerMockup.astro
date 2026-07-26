@@ -1,0 +1,194 @@
+---
+---
+
+<div class="mockup-wrapper not-prose">
+<div class="compare-grid">
+      <div class="compare-card">
+        <div class="compare-title before">Before: by hand</div>
+        <p>Come up with a scenario, then hand-write every alert in the backend code: which host, which technique, which timestamp, for every step of every attacker. Reviewing a finished scenario meant reading raw alert records line by line.</p>
+      </div>
+      <div class="compare-card">
+        <div class="compare-title after">After: with UnraveledPlayer</div>
+        <p>Draw each attacker's path on the network diagram in the browser. The tool generates the alerts in the exact format the pipeline expects, and reviewing a scenario is as simple as playing the attack sequence back in time order.</p>
+      </div>
+    </div>
+</div>
+
+<style>
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    .mockup-wrapper {
+      --bg: var(--color-paper);
+      --bg-card: var(--color-surface);
+      --bg-surface: var(--color-line);
+      --text: var(--color-ink);
+      --text-muted: var(--color-ink-soft);
+      --text-faint: var(--color-ink-soft);
+      --border: var(--color-line);
+      --border-med: var(--color-line);
+      --font: var(--font-body);
+      --mono: var(--font-mono);
+      --radius: 10px;
+      --radius-lg: 14px;
+      --teal: #1D9E75;
+      --coral: #D85A30;
+    }
+
+    :global(.dark) .mockup-wrapper {
+        --bg: var(--color-paper);
+        --bg-card: var(--color-surface);
+        --bg-surface: var(--color-line);
+        --text: var(--color-ink);
+        --text-muted: var(--color-ink-soft);
+        --text-faint: var(--color-ink-soft);
+        --border: var(--color-line);
+        --border-med: var(--color-line);
+        --teal: #2dbd8f;
+        --coral: #e06b40;
+      }
+
+    .mockup-wrapper {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 0;
+    }
+
+    .container { max-width: 900px; margin: 0 auto; }
+
+    nav { margin-bottom: 3rem; display: flex; align-items: center; gap: 1rem; }
+    .back-link {
+      font-size: 13px; color: var(--text-muted); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 5px;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--text); }
+
+    h1 { font-size: 32px; font-weight: 300; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--text-muted); margin-bottom: 2rem; max-width: 640px; font-style: italic; font-size: 13px; }
+
+    /* BADGES */
+    .badge-row { display: flex; gap: 0.8rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 4px 12px; border-radius: 99px; background: var(--bg-surface);
+      font-size: 12px; font-weight: 500; color: var(--text);
+      border: 0.5px solid var(--border);
+    }
+    .badge-live::before {
+      content: ''; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--teal);
+    }
+
+    /* CTA */
+    .cta-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+    .cta-button {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 22px; border-radius: 99px;
+      background: var(--text); color: var(--bg);
+      font-size: 13px; font-weight: 500; text-decoration: none;
+      border: 0.5px solid var(--border-med);
+      transition: opacity 0.15s;
+    }
+    .cta-button:hover { opacity: 0.85; }
+    .cta-note { font-size: 12px; color: var(--text-faint); font-style: italic; max-width: 420px; }
+
+    /* SECTIONS */
+    section { margin-bottom: 4rem; }
+    .section-label {
+      font-size: 10px; color: var(--text-faint);
+      letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 1.5rem;
+    }
+    .prose {
+      max-width: 700px;
+      font-size: 14px; color: var(--text-muted); line-height: 1.8;
+    }
+    .prose p { margin-bottom: 1.1rem; }
+    .prose p:last-child { margin-bottom: 0; }
+    .prose strong { color: var(--text); font-weight: 500; }
+    .prose a {
+      color: var(--text); text-decoration: underline;
+      text-underline-offset: 2px; text-decoration-color: var(--border-med);
+      transition: text-decoration-color 0.15s;
+    }
+    .prose a:hover { text-decoration-color: var(--text); }
+
+    /* PIPELINE STRIP */
+    .chain-strip {
+      display: flex; align-items: flex-start;
+      border: 0.5px solid var(--border); border-radius: var(--radius-lg);
+      overflow: hidden; margin: 1rem 0;
+    }
+    .chain-step {
+      flex: 1; padding: 1.25rem 1rem;
+      border-left: 0.5px solid var(--border);
+    }
+    .chain-step:first-child { border-left: none; }
+    .chain-num {
+      font-size: 10px; font-family: var(--mono); color: var(--text-faint);
+      letter-spacing: 0.2em; margin-bottom: 0.5rem; display: block;
+    }
+    .chain-name { font-size: 13px; font-weight: 500; margin-bottom: 0.25rem; }
+    .chain-desc { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+
+    .caption {
+      font-size: 12px; color: var(--text-faint); line-height: 1.6;
+      max-width: 640px; margin-top: 0.75rem; font-style: italic;
+    }
+
+    /* BEFORE / AFTER */
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+    .compare-card {
+      border: 0.5px solid var(--border); border-radius: var(--radius-lg);
+      padding: 1.25rem;
+    }
+    .compare-title {
+      font-size: 10px; font-family: var(--mono);
+      letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 0.75rem;
+    }
+    .compare-title.before { color: var(--coral); }
+    .compare-title.after { color: var(--teal); }
+    .compare-card p { font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+
+    /* HIGHLIGHTS */
+    .contribution-list { list-style: none; }
+    .contribution-item {
+      display: flex; gap: 1.5rem; margin-bottom: 1.5rem;
+      padding-left: 1rem; border-left: 1.5px solid var(--border-med);
+    }
+    .contribution-num {
+      font-size: 11px; font-weight: 600; color: var(--text-faint);
+      text-transform: uppercase; width: 24px; flex-shrink: 0;
+      padding-top: 2px; font-family: var(--mono);
+    }
+    .contribution-content h4 { font-size: 14px; font-weight: 500; margin-bottom: 0.25rem; }
+    .contribution-content p { font-size: 13px; color: var(--text-muted); }
+
+    /* NOTE BOX */
+    .writer-note {
+      padding: 1.5rem;
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg-surface);
+    }
+    .writer-note-label {
+      font-size: 10px; font-family: var(--mono); color: var(--text-faint);
+      letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 1.25rem;
+    }
+    .writer-note p {
+      font-size: 13px; color: var(--text-muted); line-height: 1.85;
+      font-style: italic; margin-bottom: 0.9rem;
+    }
+    .writer-note p:last-child { margin-bottom: 0; }
+
+    @media (max-width: 600px) {
+      .chain-strip { flex-direction: column; }
+      .chain-step { border-left: none; border-top: 0.5px solid var(--border); }
+      .chain-step:first-child { border-top: none; }
+      .compare-grid { grid-template-columns: 1fr; }
+    }
+  
+</style>

@@ -1,0 +1,48 @@
+---
+title: Constellation (WIP)
+summary: A celestial inference engine. Map network anomalies as stars, match them against known constellations, and predict the unseen future.
+role: Developer
+date: 2024-06-01
+tags: [Python, TypeScript, Inference Engine, Astrology Facade]
+featured: true
+draft: false
+---
+
+import ConstellationMockup from '../../components/mockups/ConstellationMockup.astro';
+
+Read the stars. Foresee the unseen.
+
+## The Night Sky
+The digital expanse is vast, filled with millions of isolated events flashing in the dark. Most observers are blinded by the sheer volume of shooting stars, treating each spark as a separate accident. They fail to realize that these sparks are not random; they are alignments.
+
+**Can you see the grand design before the final star falls?**
+
+## The Astrolabe
+- **Map:** Every point in the network is a star. The architecture is our sky-chart.
+- **Match:** Compare observed sparks against ancient celestial patterns—the forbidden constellations.
+- **Forecast:** Calculate the trajectory. Predict which star will be the next to ignite.
+
+## Celestial Mechanics
+
+
+<ConstellationMockup />
+
+## The Cosmic Codex
+The engine speaks in the language of the heavens, abstracting the noise of the mundane into pure celestial geometry.
+
+```python
+@dataclass
+class Anomaly:
+    cosmic_id: str
+    stellar_time: int
+    origin_star: Optional[str]
+    target_star: Optional[str]
+    phenomenon: str # e.g., Shadow Alignment
+    intensity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    celestial_raw: dict # Original stellar evidence
+```
+
+## The Grand Alignment
+1. **Phase 1-2 (Constructing the Observatory):** Building the adaptors to ingest the stellar stream and the state tracker to maintain the current position of every star.
+2. **Phase 3-4 (Decoding the Zodiac):** Normalizing ancient attack-flows into modern constellations and perfecting the Oracle's probabilistic scoring engine.
+3. **Phase 5-6 (The Final Revelation):** Igniting the dark-sky dashboard to replay cosmic battles and reveal the winning constellation before it's too late.

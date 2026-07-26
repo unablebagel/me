@@ -1,0 +1,27 @@
+---
+title: ZoneGraph
+summary: Integrated web attack-surface mapping tool that correlates DNS, CT logs, HTTP probing, and CNAME chains into an interactive Cytoscape graph.
+role: Developer
+date: 2026-03-01
+tags: [Python, DNS, Cytoscape, FastAPI, OpenAI API]
+featured: true
+draft: false
+---
+
+import ZoneGraphMockup from '../../components/mockups/ZoneGraphMockup.astro';
+
+ZoneGraph is an integrated attack-surface mapping tool that transforms fragmented DNS and certificate data into a unified, interactive graph of reachable web infrastructure.
+
+## Problem Statement
+
+Organisations unknowingly expose vast, poorly inventoried attack surfaces through complex DNS configurations. CNAME chains, delegations, and shadow IT extend infrastructure far beyond primary domains — yet existing tools tackle each signal in isolation, forcing analysts to manually correlate the results.
+
+*How can we unify DNS configuration data with certificate transparency logs and live HTTP probing to reveal hidden security vulnerabilities that traditional fragmented tools miss?*
+
+- **20,904** Dangling DNS records — each a subdomain takeover opportunity
+- **17.7M** Hidden subdomains surfaced via certificate transparency logs
+- **65 days** Average time a hijacked subdomain persists before detection
+
+## The Pipeline
+
+<ZoneGraphMockup />

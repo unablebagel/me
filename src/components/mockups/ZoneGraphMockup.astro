@@ -1,0 +1,850 @@
+---
+---
+
+<div class="mockup-wrapper not-prose zonegraph-mockup" data-zone-graph>
+<div class="carousel-wrap">
+
+      <!-- Header bar -->
+      <div class="carousel-header">
+        <span class="carousel-progress" id="progressLabel">PHASE 0 / 5</span>
+        <span class="carousel-phase-title" id="phaseTitle">Infrastructure Setup</span>
+      </div>
+
+      <!-- Slides -->
+      <div class="carousel-viewport">
+        <div class="carousel-track" id="carouselTrack">
+
+          <!-- SLIDE 0: Infrastructure Setup -->
+          <div class="slide">
+            <div class="slide-text">
+              <div class="slide-phase-num">Phase 0 · Prerequisite</div>
+              <h3>Infrastructure Setup</h3>
+              <p>Before running the pipeline, a multi-cloud test environment was deployed to validate ZoneGraph against realistic, intentionally noisy DNS configurations — the kind common in actual organisations.</p>
+              <ul class="slide-bullets">
+                <li>Domain <code style="font-family:var(--mono);font-size:11px;">1654862.xyz</code> managed via Cloudflare DNS</li>
+                <li>Dangling CNAME: <code style="font-family:var(--mono);font-size:11px;">health.*</code> → non-existent target</li>
+                <li>Circular records: <code style="font-family:var(--mono);font-size:11px;">dev3</code> ↔ <code style="font-family:var(--mono);font-size:11px;">dev4</code></li>
+                <li>Hidden vhost only reachable via Host header fuzzing</li>
+                <li>Credential leak simulated via TXT record</li>
+              </ul>
+            </div>
+            <div class="slide-vis">
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;gap:10px;">
+                  <div style="flex:1;background:var(--bg-surface);border:0.5px solid var(--border);border-radius:8px;padding:12px;">
+                    <div style="font-size:9px;font-weight:600;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">AWS</div>
+                    <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:3px;">Amazon Linux 2023</div>
+                    <div style="font-size:10.5px;color:var(--text-muted);">nginx · HTTP + HTTPS</div>
+                    <div style="font-size:10.5px;color:var(--text-muted);margin-top:3px;font-family:var(--mono);">admin.1654862.xyz</div>
+                    <div style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;background:var(--green-fill);color:var(--green-text);border-radius:99px;padding:2px 8px;font-size:10px;font-weight:500;">vhost only</div>
+                  </div>
+                  <div style="flex:1;background:var(--bg-surface);border:0.5px solid var(--border);border-radius:8px;padding:12px;">
+                    <div style="font-size:9px;font-weight:600;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Azure</div>
+                    <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:3px;">Ubuntu 24.04</div>
+                    <div style="font-size:10.5px;color:var(--text-muted);">nginx · HTTP + HTTPS</div>
+                    <div style="font-size:10.5px;color:var(--text-muted);margin-top:3px;font-family:var(--mono);">1654862.xyz</div>
+                    <div style="margin-top:6px;display:inline-flex;align-items:center;gap:4px;background:var(--bg-surface);color:var(--text-faint);border:0.5px solid var(--border-med);border-radius:99px;padding:2px 8px;font-size:10px;font-weight:500;">primary</div>
+                  </div>
+                </div>
+                <div style="background:var(--red-fill);border:0.5px solid var(--red-text);border-radius:8px;padding:10px 12px;">
+                  <div style="font-size:9px;font-weight:600;color:var(--red-text);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Engineered DNS Traps</div>
+                  <div style="font-size:10.5px;color:var(--red-text);line-height:1.7;font-family:var(--mono);">
+                    health.* → live.* (dangling)<br>
+                    dev3 ↔ dev4 (circular)<br>
+                    ambtenaar.* → non-routable IP<br>
+                    TXT → credential leak sim
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SLIDE 1: DNS Enumeration -->
+          <div class="slide">
+            <div class="slide-text">
+              <div class="slide-phase-num">Phase 1</div>
+              <h3>DNS Enumeration</h3>
+              <p>Everything starts with the DNS record set. ZoneGraph queries authoritative nameservers for A, CNAME, MX, NS, and TXT records, then runs a dictionary-based subdomain bruteforce to find assets the target organisation didn't advertise.</p>
+              <ul class="slide-bullets">
+                <li>Authoritative record lookup (A, CNAME, MX, NS, TXT)</li>
+                <li>Subdomain bruteforce via curated wordlist</li>
+                <li>Zone transfer attempt (AXFR)</li>
+              </ul>
+            </div>
+            <div class="slide-vis">
+              <div class="vis-terminal">
+                <div class="term-bar">
+                  <span class="term-dot" style="background:#ff5f56"></span>
+                  <span class="term-dot" style="background:#ffbd2e"></span>
+                  <span class="term-dot" style="background:#27c93f"></span>
+                  <span class="term-title">zsh — enum.py</span>
+                </div>
+                <div class="term-body">
+                  <div class="term-line"><span class="term-prompt">$</span><span class="term-cmd"> python enum.py --target example.com</span></div>
+                  <div class="term-line term-faint">Resolving authoritative NS...</div>
+                  <div class="term-line"><span class="term-ok">[✓]</span> A      →  93.184.216.34</div>
+                  <div class="term-line"><span class="term-ok">[✓]</span> CNAME  →  cdn.cloudfront.net</div>
+                  <div class="term-line"><span class="term-ok">[✓]</span> MX     →  mail.example.com</div>
+                  <div class="term-line"><span class="term-ok">[✓]</span> NS     →  ns1.example.com</div>
+                  <div class="term-line term-faint">Running subdomain bruteforce...</div>
+                  <div class="term-line"><span class="term-hi">[+]</span> 14 subdomains discovered</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SLIDE 2: CT Log Analysis -->
+          <div class="slide">
+            <div class="slide-text">
+              <div class="slide-phase-num">Phase 2</div>
+              <h3>CT Log Analysis</h3>
+              <p>Certificate Transparency logs are a goldmine — every TLS certificate issued for a domain is publicly recorded. ZoneGraph queries crt.sh and Censys to surface hosts that have a certificate but no DNS record: Shadow IT.</p>
+              <ul class="slide-bullets">
+                <li>Query crt.sh and Censys APIs</li>
+                <li>Cross-reference cert SANs against DNS results</li>
+                <li>Flag hostnames with certs but no DNS → Shadow IT</li>
+              </ul>
+            </div>
+            <div class="slide-vis">
+              <div class="vis-ct">
+                <div class="vis-ct-header">crt.sh — Certificate Transparency Results</div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Domain</th>
+                      <th>Issuer</th>
+                      <th>In DNS?</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>example.com</td>
+                      <td>Let's Encrypt</td>
+                      <td><span class="status-ok">✓ Known</span></td>
+                    </tr>
+                    <tr>
+                      <td>api.example.com</td>
+                      <td>DigiCert</td>
+                      <td><span class="status-ok">✓ Known</span></td>
+                    </tr>
+                    <tr class="shadow-row">
+                      <td>dev-int.example.com</td>
+                      <td>Let's Encrypt</td>
+                      <td><span class="status-bad">✗ Not in DNS</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- SLIDE 3: Live HTTP Probing -->
+          <div class="slide">
+            <div class="slide-text">
+              <div class="slide-phase-num">Phase 3</div>
+              <h3>Live HTTP Probing</h3>
+              <p>A discovered hostname means nothing if the server is down. ZoneGraph fires async HTTP/HTTPS requests at every host, records status codes, follows redirects, and fingerprints the technology stack from response headers.</p>
+              <ul class="slide-bullets">
+                <li>Async probing with aiohttp (concurrent)</li>
+                <li>TLS certificate validation and expiry check</li>
+                <li>Stack fingerprint from Server / X-Powered-By headers</li>
+                <li>Flags 404s on live IPs as "Dangling DNS"</li>
+              </ul>
+            </div>
+            <div class="slide-vis">
+              <div class="vis-probe">
+                <div class="probe-scanner">ZoneGraph<br>Scanner</div>
+                <div class="probe-line-area">
+                  <div class="probe-connector"></div>
+                  <div class="probe-connector"></div>
+                  <div class="probe-connector"></div>
+                </div>
+                <div class="probe-targets">
+                  <div class="probe-row">
+                    <div class="probe-dash"></div>
+                    <div class="probe-host">api.example.com</div>
+                    <span class="probe-status s200">200 OK</span>
+                  </div>
+                  <div class="probe-row">
+                    <div class="probe-dash"></div>
+                    <div class="probe-host">staging.example.com</div>
+                    <span class="probe-status stimeout">Timeout</span>
+                  </div>
+                  <div class="probe-row">
+                    <div class="probe-dash"></div>
+                    <div class="probe-host">old.example.com</div>
+                    <span class="probe-status s404">404 · Dangling</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SLIDE 4: VHost Fuzzing & Redirect Chains -->
+          <div class="slide">
+            <div class="slide-text">
+              <div class="slide-phase-num">Phase 4</div>
+              <h3>VHost Fuzzing &amp; Redirects</h3>
+              <p>Shared hosting puts multiple sites behind a single IP. By fuzzing the HTTP <code style="font-family:var(--mono);font-size:11px;background:var(--bg-surface);padding:1px 5px;border-radius:4px;">Host:</code> header against every discovered IP, ZoneGraph uncovers virtual hosts that never appear in DNS — then traces where redirects lead.</p>
+              <ul class="slide-bullets">
+                <li>Fuzz HTTP Host header against all discovered IPs</li>
+                <li>Record <code style="font-family:var(--mono);font-size:11px;">VHOST_ON</code> edges: subdomain → IP</li>
+                <li>Follow redirect chains, recording <code style="font-family:var(--mono);font-size:11px;">REDIRECTS_TO</code> edges</li>
+                <li>Tag redirect sources and targets as distinct node types</li>
+              </ul>
+            </div>
+            <div class="slide-vis">
+              <div class="vis-chain">
+                <div class="chain-row">
+                  <div class="chain-node">
+                    <div class="chain-node-name">shop.example.com</div>
+                    <div class="chain-node-type">subdomain_live · Host fuzz hit</div>
+                  </div>
+                  <div class="chain-arrow">→</div>
+                  <div class="chain-node" style="flex:0 0 auto;text-align:center;">
+                    <div class="chain-node-name">93.184.216.34</div>
+                    <div class="chain-node-type">ip · VHOST_ON</div>
+                  </div>
+                </div>
+                <div style="padding-left: 12px; color: var(--text-faint); font-size: 13px; margin: 4px 0;">↓ REDIRECTS_TO</div>
+                <div class="chain-row">
+                  <div class="chain-node" style="border-color:var(--amber-text);background:var(--amber-fill);">
+                    <div class="chain-node-name" style="color:var(--amber-text);">shop.example.com</div>
+                    <div class="chain-node-type" style="color:var(--amber-text);">redirect_source</div>
+                  </div>
+                  <div class="chain-arrow">→</div>
+                  <div class="chain-node" style="border-color:#a855f7;background:color-mix(in srgb,#a855f7 12%,var(--bg-card));">
+                    <div class="chain-node-name" style="color:#a855f7;">store.cdn-partner.com</div>
+                    <div class="chain-node-type" style="color:#a855f7;">redirect_target</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SLIDE 5: Graph Visualization -->
+          <div class="slide">
+            <div class="slide-text">
+              <div class="slide-phase-num">Phase 5</div>
+              <h3>Graph Visualization</h3>
+              <p>All pipeline data is pushed into Cytoscape desktop via <code style="font-family:var(--mono);font-size:11px;background:var(--bg-surface);padding:1px 5px;border-radius:4px;">py4cytoscape</code>. Node shape and colour encode asset type at a glance. A GPT-4 agent then reads the scan summary and produces a self-reviewed security report in HTML.</p>
+              <ul class="slide-bullets">
+                <li>Nodes: <code style="font-family:var(--mono);font-size:11px;">domain</code>, <code style="font-family:var(--mono);font-size:11px;">subdomain_live</code>, <code style="font-family:var(--mono);font-size:11px;">subdomain_down</code>, <code style="font-family:var(--mono);font-size:11px;">redirect_source</code>, <code style="font-family:var(--mono);font-size:11px;">redirect_target</code>, <code style="font-family:var(--mono);font-size:11px;">ip</code></li>
+                <li>Edges: <code style="font-family:var(--mono);font-size:11px;">SUBDOMAIN</code>, <code style="font-family:var(--mono);font-size:11px;">VHOST_ON</code>, <code style="font-family:var(--mono);font-size:11px;">REDIRECTS_TO</code></li>
+                <li>GPT-4 writes report · logic self-review pass (LOGICAL / NOT LOGICAL)</li>
+                <li>Output: styled HTML with risk ratings and remediation steps</li>
+              </ul>
+            </div>
+            <div class="slide-vis">
+              <div class="vis-graph">
+                <svg viewBox="0 0 290 185" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+                  <!-- SUBDOMAIN edges (blue) -->
+                  <line x1="145" y1="88" x2="60"  y2="45"  stroke="#3b82f6" stroke-width="1.2" opacity="0.35"/>
+                  <line x1="145" y1="88" x2="145" y2="22"  stroke="#3b82f6" stroke-width="1.2" opacity="0.35"/>
+                  <line x1="145" y1="88" x2="230" y2="45"  stroke="#3b82f6" stroke-width="1.2" opacity="0.35"/>
+                  <line x1="145" y1="88" x2="55"  y2="135" stroke="#3b82f6" stroke-width="1.2" opacity="0.35"/>
+                  <!-- VHOST_ON edges (red) -->
+                  <line x1="60"  y1="45"  x2="255" y2="110" stroke="#ef4444" stroke-width="1" opacity="0.3"/>
+                  <line x1="145" y1="22"  x2="255" y2="110" stroke="#ef4444" stroke-width="1" opacity="0.3"/>
+                  <!-- REDIRECTS_TO edge (orange) -->
+                  <line x1="230" y1="45"  x2="195" y2="155" stroke="#f97316" stroke-width="1.2" opacity="0.5" stroke-dasharray="4 3"/>
+
+                  <!-- domain: blue ellipse -->
+                  <ellipse cx="145" cy="88" rx="22" ry="14" fill="#3b82f6" opacity="0.9"/>
+                  <text x="145" y="92" text-anchor="middle" font-size="7.5" fill="white" font-family="sans-serif" font-weight="600">example.com</text>
+
+                  <!-- subdomain_live: green ellipse -->
+                  <ellipse cx="60"  cy="45"  rx="16" ry="10" fill="#22c55e" opacity="0.85"/>
+                  <text x="60"  y="48.5" text-anchor="middle" font-size="7" fill="white" font-family="sans-serif">api</text>
+                  <ellipse cx="145" cy="22"  rx="16" ry="10" fill="#22c55e" opacity="0.85"/>
+                  <text x="145" y="25.5" text-anchor="middle" font-size="7" fill="white" font-family="sans-serif">mail</text>
+
+                  <!-- subdomain_down: red ellipse -->
+                  <ellipse cx="55"  cy="135" rx="16" ry="10" fill="#ef4444" opacity="0.75"/>
+                  <text x="55"  y="138.5" text-anchor="middle" font-size="7" fill="white" font-family="sans-serif">old</text>
+
+                  <!-- redirect_source: orange diamond -->
+                  <polygon points="230,30 242,45 230,60 218,45" fill="#f97316" opacity="0.8"/>
+                  <text x="230" y="48.5" text-anchor="middle" font-size="7" fill="white" font-family="sans-serif">shop</text>
+
+                  <!-- redirect_target: purple diamond -->
+                  <polygon points="195,140 207,155 195,170 183,155" fill="#a855f7" opacity="0.8"/>
+                  <text x="195" y="158.5" text-anchor="middle" font-size="7" fill="white" font-family="sans-serif">cdn</text>
+
+                  <!-- ip: light-orange triangle -->
+                  <polygon points="255,95 268,122 242,122" fill="#fb923c" opacity="0.75"/>
+                  <text x="255" y="117" text-anchor="middle" font-size="7" fill="white" font-family="sans-serif">IP</text>
+                </svg>
+                <div class="vis-graph-legend">
+                  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>domain</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>live</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>down</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#f97316;clip-path:polygon(50% 0%,100% 100%,0% 100%)"></div>redirect</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#a855f7;clip-path:polygon(50% 0%,100% 100%,0% 100%)"></div>target</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#fb923c"></div>ip</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /carousel-track -->
+      </div><!-- /carousel-viewport -->
+
+      <!-- Nav bar -->
+      <div class="carousel-nav">
+        <button class="nav-btn" id="btnPrev" onclick="carouselGo(current - 1)" disabled>← Prev</button>
+        <div class="nav-dots" id="navDots">
+          <button class="dot active" onclick="carouselGo(0)"></button>
+          <button class="dot" onclick="carouselGo(1)"></button>
+          <button class="dot" onclick="carouselGo(2)"></button>
+          <button class="dot" onclick="carouselGo(3)"></button>
+          <button class="dot" onclick="carouselGo(4)"></button>
+          <button class="dot" onclick="carouselGo(5)"></button>
+        </div>
+        <button class="nav-btn" id="btnNext" onclick="carouselGo(current + 1)">Next →</button>
+      </div>
+
+    </div><!-- /carousel-wrap -->
+</div>
+
+<style>
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    .mockup-wrapper {
+      --bg: var(--color-paper);
+      --bg-card: var(--color-surface);
+      --bg-surface: var(--color-line);
+      --text: var(--color-ink);
+      --text-muted: var(--color-ink-soft);
+      --text-faint: var(--color-ink-soft);
+      --border: var(--color-line);
+      --border-med: var(--color-line);
+      --green-fill: #EAF3DE;
+      --green-border: #3B6D11;
+      --green-text: #27500A;
+      --red-fill: #FDE8E8;
+      --red-text: #9B1C1C;
+      --amber-fill: #FEF3C7;
+      --amber-text: #78350F;
+      --accent: var(--color-signal);
+      --font: var(--font-body);
+      --mono: var(--font-mono);
+      --radius: 10px;
+      --radius-lg: 14px;
+    }
+
+    :global(.dark) .mockup-wrapper {
+        --bg: var(--color-paper);
+        --bg-card: var(--color-surface);
+        --bg-surface: var(--color-line);
+        --text: var(--color-ink);
+        --text-muted: var(--color-ink-soft);
+        --text-faint: var(--color-ink-soft);
+        --border: var(--color-line);
+        --border-med: var(--color-line);
+        --green-fill: #17290d;
+        --green-border: #3B6D11;
+        --green-text: #97C459;
+        --red-fill: #2c1010;
+        --red-text: #f87171;
+        --amber-fill: #2c1f08;
+        --amber-text: #fbbf24;
+        --accent: var(--color-signal);
+      }
+
+    .mockup-wrapper {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 0;
+    }
+
+    /* The source demo was composed for a 900px canvas. Let this visual break
+       out of the prose column while remaining fluid on smaller screens. */
+    .zonegraph-mockup {
+      width: min(900px, calc(100vw - 3rem));
+      margin: 2rem 50%;
+      transform: translateX(-50%);
+    }
+
+    .container { max-width: 900px; margin: 0 auto; }
+
+    nav { margin-bottom: 3rem; display: flex; align-items: center; gap: 1rem; }
+    .back-link {
+      font-size: 13px; color: var(--text-muted); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 5px;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--text); }
+
+    h1 { font-size: 32px; font-weight: 300; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--text-muted); margin-bottom: 2rem; max-width: 600px; }
+
+    /* BADGES */
+    .badge-row { display: flex; gap: 0.8rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 4px 12px; border-radius: 99px; background: var(--bg-surface);
+      font-size: 12px; font-weight: 500; color: var(--text);
+      border: 0.5px solid var(--border);
+    }
+
+    /* SECTIONS */
+    section { margin-bottom: 4rem; }
+    .section-label {
+      font-size: 10px; color: var(--text-faint);
+      letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 1.5rem;
+    }
+
+    /* ─── CAROUSEL ─── */
+    .carousel-wrap {
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--bg-card);
+      overflow: hidden;
+    }
+
+    .carousel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      border-bottom: 0.5px solid var(--border);
+    }
+    .carousel-progress {
+      font-size: 10px; font-family: var(--mono); color: var(--text-faint);
+      letter-spacing: 0.08em;
+    }
+    .carousel-phase-title {
+      font-size: 12px; font-weight: 500; color: var(--text-muted);
+    }
+
+    .carousel-viewport { overflow: hidden; }
+
+    .carousel-track {
+      display: flex;
+      width: 100%;
+      transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .slide {
+      flex: 0 0 100%;
+      display: flex;
+      gap: 2.5rem;
+      padding: 2rem 1.5rem;
+      align-items: center;
+      min-height: 280px;
+    }
+
+    .slide-text { flex: 1; min-width: 0; }
+    .slide-phase-num {
+      font-size: 10px; font-weight: 600; color: var(--text-faint);
+      text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;
+    }
+    .slide-text h3 { font-size: 18px; font-weight: 400; margin-bottom: 0.75rem; }
+    .slide-text p { font-size: 13px; color: var(--text-muted); line-height: 1.7; margin-bottom: 1rem; }
+    .slide-bullets { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+    .slide-bullets li {
+      font-size: 12px; color: var(--text-muted);
+      display: flex; align-items: baseline; gap: 7px;
+    }
+    .slide-bullets li::before {
+      content: '—'; color: var(--text-faint); flex-shrink: 0; font-size: 11px;
+    }
+
+    .slide-vis { flex: 0 1 300px; min-width: 0; }
+
+    /* CAROUSEL NAV */
+    .carousel-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.875rem 1.5rem;
+      border-top: 0.5px solid var(--border);
+    }
+    .nav-btn {
+      background: none;
+      border: 0.5px solid var(--border-med);
+      border-radius: var(--radius);
+      padding: 5px 16px;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      font-family: var(--font);
+      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) { background: var(--bg-surface); }
+    .nav-btn:disabled { opacity: 0.25; cursor: default; }
+
+    .nav-dots { display: flex; gap: 5px; align-items: center; }
+    .dot {
+      height: 5px; width: 5px; border-radius: 99px;
+      background: var(--border-med); transition: background 0.2s, width 0.2s;
+      cursor: pointer; border: none;
+    }
+    .dot.active { background: var(--text); width: 16px; }
+
+    /* ─── PHASE 1 TERMINAL ─── */
+    .vis-terminal {
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: #0d1117;
+      font-family: var(--mono);
+      font-size: 11.5px;
+    }
+    .term-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: #161b22;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .term-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .term-title {
+      margin-left: 6px;
+      font-size: 10px;
+      color: #484f58;
+      font-family: var(--mono);
+    }
+    .term-body { padding: 12px 14px; line-height: 1.9; }
+    .term-line { color: #c9d1d9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .term-prompt { color: #3fb950; margin-right: 6px; }
+    .term-cmd { color: #79c0ff; }
+    .term-ok { color: #3fb950; }
+    .term-hi { color: #e3b341; }
+    .term-faint { color: #484f58; }
+
+    /* ─── PHASE 2 CT LOG TABLE ─── */
+    .vis-ct {
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--bg-surface);
+    }
+    .vis-ct-header {
+      padding: 8px 12px;
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--text-faint);
+      letter-spacing: 0.06em;
+      border-bottom: 0.5px solid var(--border);
+      background: var(--bg-card);
+    }
+    .vis-ct table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .vis-ct th {
+      text-align: left;
+      padding: 6px 10px;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      border-bottom: 0.5px solid var(--border);
+      background: var(--bg-card);
+    }
+    .vis-ct td {
+      padding: 7px 10px;
+      color: var(--text-muted);
+      border-bottom: 0.5px solid var(--border);
+      font-family: var(--mono);
+      font-size: 10.5px;
+    }
+    .vis-ct tr:last-child td { border-bottom: none; }
+    .vis-ct tr.shadow-row { background: var(--red-fill); }
+    .vis-ct tr.shadow-row td { color: var(--red-text); }
+    .status-ok {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--green-fill); color: var(--green-text);
+      padding: 1px 7px; border-radius: 99px; font-size: 10px;
+      font-family: var(--font); font-weight: 500;
+    }
+    .status-bad {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--red-fill); color: var(--red-text);
+      padding: 1px 7px; border-radius: 99px; font-size: 10px;
+      font-family: var(--font); font-weight: 500;
+    }
+
+    /* ─── PHASE 3 HTTP PROBE ─── */
+    .vis-probe {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+    .probe-scanner {
+      flex: 0 0 auto;
+      background: var(--bg-surface);
+      border: 0.5px solid var(--border-med);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.4;
+    }
+    .probe-line-area {
+      flex: 1;
+      position: relative;
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+    }
+    .probe-connector {
+      height: 0;
+      border-top: 1px dashed var(--border-med);
+      flex: 1;
+    }
+    .probe-targets {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .probe-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .probe-dash {
+      width: 20px;
+      border-top: 1px dashed var(--border-med);
+    }
+    .probe-host {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      background: var(--bg-surface);
+      border: 0.5px solid var(--border);
+      border-radius: 5px;
+      padding: 4px 8px;
+      white-space: nowrap;
+    }
+    .probe-status {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 99px;
+      white-space: nowrap;
+      font-family: var(--mono);
+    }
+    .s200 { background: var(--green-fill); color: var(--green-text); }
+    .s404 { background: var(--red-fill); color: var(--red-text); }
+    .stimeout { background: var(--bg-surface); color: var(--text-faint); border: 0.5px solid var(--border-med); }
+
+    /* ─── PHASE 4 CNAME CHAIN ─── */
+    .vis-chain {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chain-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .chain-node {
+      background: var(--bg-surface);
+      border: 0.5px solid var(--border-med);
+      border-radius: 7px;
+      padding: 8px 12px;
+      flex: 1;
+    }
+    .chain-node.danger {
+      border-color: var(--red-text);
+      background: var(--red-fill);
+    }
+    .chain-node-name {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--text);
+      font-weight: 500;
+    }
+    .chain-node.danger .chain-node-name { color: var(--red-text); }
+    .chain-node-type {
+      font-size: 9px;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 2px;
+    }
+    .chain-arrow {
+      font-size: 14px;
+      color: var(--text-faint);
+      flex-shrink: 0;
+      padding: 0 2px;
+    }
+    .chain-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--red-fill);
+      color: var(--red-text);
+      border: 0.5px solid var(--red-text);
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 99px;
+      letter-spacing: 0.05em;
+      margin-top: 5px;
+    }
+
+    /* ─── PHASE 5 GRAPH ─── */
+    .vis-graph {
+      background: var(--bg-surface);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .vis-graph svg { display: block; max-width: 100%; height: auto; }
+    .vis-graph-legend {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      color: var(--text-faint);
+    }
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* CAPABILITIES */
+    .cap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .cap-card {
+      background: var(--bg-surface);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      border: 0.5px solid var(--border);
+    }
+    .cap-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 0.5rem; }
+    .cap-card p { font-size: 13px; color: var(--text-muted); }
+
+    /* FOOTER-LIKE CALLOUT */
+    .callout {
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem;
+      text-align: center;
+      border: 0.5px solid var(--border);
+    }
+    .callout h2 { font-size: 20px; font-weight: 400; margin-bottom: 1rem; }
+    .callout p { color: var(--text-muted); font-size: 14px; margin-bottom: 1.5rem; }
+
+    /* PROBLEM SECTION */
+    .problem-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 2.5rem; align-items: start;
+    }
+    .problem-lead { font-size: 14px; color: var(--text-muted); line-height: 1.8; }
+    .problem-question {
+      font-size: 13.5px; color: var(--text);
+      border-left: 2px solid var(--border-med);
+      padding-left: 1rem; margin-top: 1.25rem;
+      font-style: italic; line-height: 1.7;
+    }
+    .stats-col { display: flex; flex-direction: column; gap: 0.75rem; }
+    .stat-card {
+      background: var(--bg-surface); border: 0.5px solid var(--border);
+      border-radius: var(--radius); padding: 0.875rem 1.25rem;
+    }
+    .stat-num {
+      font-size: 24px; font-weight: 300; letter-spacing: -0.03em;
+      color: var(--text); line-height: 1; margin-bottom: 4px;
+    }
+    .stat-desc { font-size: 11.5px; color: var(--text-faint); line-height: 1.5; }
+
+    /* PHASE 0 INFRA */
+    .phase-zero {
+      background: var(--bg-surface); border: 0.5px solid var(--border);
+      border-radius: var(--radius); padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      display: flex; flex-wrap: wrap; gap: 0.5rem 2rem; align-items: baseline;
+    }
+    .phase-zero-label {
+      font-size: 10px; font-weight: 600; color: var(--text-faint);
+      text-transform: uppercase; letter-spacing: 0.1em; flex-shrink: 0;
+    }
+    .infra-item { font-size: 12px; color: var(--text-muted); }
+    .infra-item strong { color: var(--text); font-weight: 500; }
+
+    @media (max-width: 700px) {
+      .slide { flex-direction: column; min-height: unset; padding: 1.5rem 1rem; }
+      .slide-vis { flex: unset; width: 100%; }
+      .cap-grid { grid-template-columns: 1fr; }
+      .vis-chain .chain-row { flex-wrap: wrap; }
+      .vis-probe { flex-direction: column; align-items: stretch; gap: 12px; }
+      .probe-line-area { display: none; }
+      .problem-grid { grid-template-columns: 1fr; }
+    }
+  
+</style>
+
+<script is:inline>
+
+  const zoneGraphRoot = document.querySelector('[data-zone-graph]');
+
+  const phases = [
+    'Infrastructure Setup',
+    'DNS Enumeration',
+    'CT Log Analysis',
+    'Live HTTP Probing',
+    'VHost Fuzzing & Redirects',
+    'Graph Visualization',
+  ];
+
+  const track = zoneGraphRoot.querySelector('#carouselTrack');
+  const dots = zoneGraphRoot.querySelectorAll('.dot');
+  const btnPrev = zoneGraphRoot.querySelector('#btnPrev');
+  const btnNext = zoneGraphRoot.querySelector('#btnNext');
+  const progressLabel = zoneGraphRoot.querySelector('#progressLabel');
+  const phaseTitle = zoneGraphRoot.querySelector('#phaseTitle');
+
+  let current = 0;
+
+  function carouselGo(n) {
+    current = Math.max(0, Math.min(phases.length - 1, n));
+    track.style.transform = `translateX(-${current * 100}%)`;
+    dots.forEach((d, i) => d.classList.toggle('active', i === current));
+    btnPrev.disabled = current === 0;
+    btnNext.disabled = current === phases.length - 1;
+    progressLabel.textContent = `PHASE ${current} / ${phases.length - 1}`;
+    phaseTitle.textContent = phases[current];
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') carouselGo(current + 1);
+    if (e.key === 'ArrowLeft')  carouselGo(current - 1);
+  });
+
+  // Touch/swipe support
+  let touchStartX = 0;
+  track.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  track.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 40) carouselGo(current + (dx < 0 ? 1 : -1));
+  }, { passive: true });
+
+</script>
