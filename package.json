@@ -15,6 +15,7 @@
   ],
   "license": "MIT",
   "author": "Bracozs",
+  "packageManager": "pnpm@11.8.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/your-username/portfolio-starter"
