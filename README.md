@@ -124,6 +124,11 @@ Vercel, Netlify, Cloudflare Pages, and others. Remember to update the `site` val
 in `astro.config.mjs` to your real domain before building — it's used for the
 sitemap and canonical URLs.
 
+This repository also includes a hardened OpenWrt pull-deployment path for the
+router-hosted copy. See [docs/openwrt-deployment.md](./docs/openwrt-deployment.md)
+for the release format, checksum verification, staging, rollback, scheduled checks,
+and Cloudflare Quick Tunnel service.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE). Free to use for personal or commercial projects,

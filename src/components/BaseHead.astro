@@ -3,7 +3,7 @@ import { ClientRouter } from 'astro:transitions';
 import { Font } from 'astro:assets';
 import { SITE } from '@/site.config';
 import { withBase } from '@/utils/url';
-import Analytics from '@vercel/analytics/astro'   // optional, remove if not using Vercel Analytics
+import Analytics from '@vercel/analytics/astro'; // optional, remove if not using Vercel Analytics
 
 interface Props {
   title: string;
@@ -13,12 +13,12 @@ interface Props {
 
 const { title: pageTitle, description: pageDescription, image } = Astro.props;
 
-const fullTitle = pageTitle.includes(SITE.name)
-  ? pageTitle
-  : `${pageTitle} · ${SITE.name}`;
+const fullTitle = pageTitle.includes(SITE.name) ? pageTitle : `${pageTitle} · ${SITE.name}`;
 const description = pageDescription || SITE.description;
-const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-const socialImage = new URL(image || withBase('/og-image.png'), Astro.site);
+const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site) : undefined;
+const socialImage = Astro.site
+  ? new URL(image || withBase('/og-image.png'), Astro.site)
+  : undefined;
 ---
 
 {/* Global Metadata */}
@@ -28,27 +28,27 @@ const socialImage = new URL(image || withBase('/og-image.png'), Astro.site);
 <meta name="author" content={SITE.name} />
 
 {/* Canonical URL */}
-<link rel="canonical" href={canonicalURL} />
+{canonicalURL && <link rel="canonical" href={canonicalURL} />}
 
 {/* Primary Meta Tags */}
 <title>{fullTitle}</title>
 <meta name="title" content={fullTitle} />
 <meta name="description" content={description} />
-<link rel="sitemap" href={withBase('/sitemap-index.xml')} />
+{Astro.site && <link rel="sitemap" href={withBase('/sitemap-index.xml')} />}
 
 {/* Open Graph / Facebook */}
 <meta property="og:type" content="website" />
 <meta property="og:title" content={fullTitle} />
-<meta property="og:url" content={canonicalURL} />
+{canonicalURL && <meta property="og:url" content={canonicalURL} />}
 <meta property="og:description" content={description} />
-<meta property="og:image" content={socialImage} />
+{socialImage && <meta property="og:image" content={socialImage} />}
 
 {/* Twitter */}
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:url" content={canonicalURL} />
+{canonicalURL && <meta name="twitter:url" content={canonicalURL} />}
 <meta name="twitter:title" content={fullTitle} />
 <meta name="twitter:description" content={description} />
-<meta name="twitter:image" content={socialImage} />
+{socialImage && <meta name="twitter:image" content={socialImage} />}
 
 {/* Favicons */}
 <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
@@ -67,20 +67,21 @@ const socialImage = new URL(image || withBase('/og-image.png'), Astro.site);
 
 {/* Theme Toggle Script */}
 <script is:inline>
-    // Runs before first paint to avoid a flash of the wrong theme.
-    // Kept in sync by ThemeToggle.astro and re-applied after every
-    // view-transition navigation below.
-    (function () {
+  // Runs before first paint to avoid a flash of the wrong theme.
+  // Kept in sync by ThemeToggle.astro and re-applied after every
+  // view-transition navigation below.
+  (function () {
     const stored = localStorage.getItem('theme');
     const theme =
-        stored ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      stored ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     document.documentElement.classList.toggle('dark', theme === 'dark');
-    })();
-    document.addEventListener('astro:after-swap', () => {
-        const stored = localStorage.getItem('theme');
-        const theme = stored ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        document.documentElement.classList.toggle('dark', theme === 'dark');
-    });
+  })();
+  document.addEventListener('astro:after-swap', () => {
+    const stored = localStorage.getItem('theme');
+    const theme =
+      stored ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  });
 </script>
 
 {/* View Transition API */}

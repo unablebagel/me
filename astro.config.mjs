@@ -4,17 +4,19 @@ import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import mdx from '@astrojs/mdx';
 
-// Powers the sitemap and the canonical / Open Graph URLs in BaseLayout.
-const SITE_URL = 'https://unablebagel.github.io';
+const deployTarget = process.env.DEPLOY_TARGET ?? 'pages';
+const isRouterBuild = deployTarget === 'router';
 
-// GitHub Pages project-page deploy: served at unablebagel.github.io/me/.
-const BASE_PATH = '/me';
+// The temporary Quick Tunnel hostname is not known at build time, so router
+// builds intentionally omit absolute canonical metadata and use root paths.
+const SITE_URL = isRouterBuild ? undefined : 'https://unablebagel.github.io';
+const BASE_PATH = isRouterBuild ? '/' : '/me';
 
 export default defineConfig({
   site: SITE_URL,
   base: BASE_PATH,
 
-  integrations: [sitemap(), mdx()],
+  integrations: [...(SITE_URL ? [sitemap()] : []), mdx()],
 
   // Prefetches internal links on hover/viewport entry for near-instant navigation.
   prefetch: true,

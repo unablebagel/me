@@ -1,0 +1,226 @@
+#!/bin/sh
+set -eu
+
+CONFIG_FILE="${ME_DEPLOY_CONFIG:-/etc/me-deploy.conf}"
+[ -r "$CONFIG_FILE" ] || { echo "Missing $CONFIG_FILE" >&2; exit 1; }
+# shellcheck disable=SC1090
+. "$CONFIG_FILE"
+
+REPOSITORY="${REPOSITORY:-unablebagel/me}"
+SITE_ROOT="${SITE_ROOT:-/srv/me}"
+STATE_DIR="${STATE_DIR:-/var/lib/me-deploy}"
+HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:8080/}"
+MAX_ARCHIVE_BYTES="${MAX_ARCHIVE_BYTES:-33554432}"
+
+RELEASES_DIR="$SITE_ROOT/releases"
+CURRENT_LINK="$SITE_ROOT/current"
+PREVIOUS_LINK="$SITE_ROOT/previous"
+LOCK_DIR="$STATE_DIR/lock"
+LAST_RUN_FILE="$STATE_DIR/last-run-id"
+
+log() {
+  logger -t me-deploy "$*" 2>/dev/null || true
+  printf '%s\n' "$*"
+}
+
+fail() {
+  log "ERROR: $*"
+  exit 1
+}
+
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || fail "Required command is missing: $1"
+}
+
+fetch() {
+  url="$1"
+  output="$2"
+  uclient-fetch -q -T 30 -O "$output" "$url"
+}
+
+link_target() {
+  [ -L "$1" ] && readlink "$1" || true
+}
+
+replace_link() {
+  destination="$1"
+  target="$2"
+  temporary="$destination.new.$$"
+  rm -f "$temporary"
+  ln -s "$target" "$temporary"
+  mv -fT "$temporary" "$destination"
+}
+
+current_commit() {
+  target="$(link_target "$CURRENT_LINK")"
+  basename "$target" 2>/dev/null || true
+}
+
+health_check() {
+  uclient-fetch -q -T 15 -O /dev/null "$HEALTH_URL"
+}
+
+acquire_lock() {
+  mkdir -p "$STATE_DIR"
+  if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+    log 'Another deployment check is already running.'
+    exit 0
+  fi
+  trap 'rm -rf "$LOCK_DIR"' EXIT HUP INT TERM
+}
+
+validate_commit() {
+  printf '%s\n' "$1" | grep -Eq '^[0-9a-f]{40}$'
+}
+
+read_manifest_value() {
+  key="$1"
+  file="$2"
+  sed -n "s/^${key}=//p" "$file"
+}
+
+cleanup_releases() {
+  active="$1"
+  previous="$2"
+  for candidate in "$RELEASES_DIR"/*; do
+    [ -d "$candidate" ] || continue
+    [ "$candidate" = "$active" ] && continue
+    [ -n "$previous" ] && [ "$candidate" = "$SITE_ROOT/$previous" ] && continue
+    name="$(basename "$candidate")"
+    validate_commit "$name" || continue
+    rm -rf "$candidate"
+  done
+}
+
+deploy_latest() {
+  require_command uclient-fetch
+  require_command jsonfilter
+  require_command sha256sum
+  require_command tar
+  acquire_lock
+
+  mkdir -p "$RELEASES_DIR" "$STATE_DIR"
+  [ ! -e "$CURRENT_LINK" ] || [ -L "$CURRENT_LINK" ] || \
+    fail "$CURRENT_LINK must be absent or a symbolic link"
+  [ ! -e "$PREVIOUS_LINK" ] || [ -L "$PREVIOUS_LINK" ] || \
+    fail "$PREVIOUS_LINK must be absent or a symbolic link"
+
+  work_dir="$(mktemp -d "$STATE_DIR/check.XXXXXX")"
+  trap 'rm -rf "$work_dir" "$LOCK_DIR"' EXIT HUP INT TERM
+
+  release_json="$work_dir/release.json"
+  fetch "https://api.github.com/repos/$REPOSITORY/releases/latest" "$release_json" || \
+    fail 'Could not read the latest GitHub release.'
+  tag="$(jsonfilter -i "$release_json" -e '@.tag_name')"
+  printf '%s\n' "$tag" | grep -Eq '^deploy-[0-9a-f]{40}$' || \
+    fail "Unexpected latest release tag: $tag"
+  commit="${tag#deploy-}"
+
+  if [ "$(current_commit)" = "$commit" ]; then
+    log "Already running commit $commit."
+    return 0
+  fi
+
+  asset_base="https://github.com/$REPOSITORY/releases/download/$tag"
+  manifest="$work_dir/deploy-manifest.txt"
+  checksums="$work_dir/SHA256SUMS"
+  archive="$work_dir/site.tar.gz"
+  fetch "$asset_base/deploy-manifest.txt" "$manifest" || fail 'Could not download manifest.'
+
+  manifest_repository="$(read_manifest_value repository "$manifest")"
+  manifest_commit="$(read_manifest_value commit "$manifest")"
+  manifest_run_id="$(read_manifest_value run_id "$manifest")"
+  manifest_archive="$(read_manifest_value archive "$manifest")"
+  manifest_sha256="$(read_manifest_value sha256 "$manifest")"
+
+  [ "$manifest_repository" = "$REPOSITORY" ] || fail 'Manifest repository does not match.'
+  [ "$manifest_commit" = "$commit" ] || fail 'Manifest commit does not match the release tag.'
+  [ "$manifest_archive" = 'site.tar.gz' ] || fail 'Manifest archive name is invalid.'
+  printf '%s\n' "$manifest_run_id" | grep -Eq '^[0-9]+$' || fail 'Manifest run ID is invalid.'
+  printf '%s\n' "$manifest_sha256" | grep -Eq '^[0-9a-f]{64}$' || fail 'Manifest checksum is invalid.'
+
+  last_run_id='0'
+  [ -r "$LAST_RUN_FILE" ] && last_run_id="$(cat "$LAST_RUN_FILE")"
+  printf '%s\n' "$last_run_id" | grep -Eq '^[0-9]+$' || last_run_id='0'
+  if [ "$manifest_run_id" -le "$last_run_id" ]; then
+    fail "Release run ID $manifest_run_id is not newer than $last_run_id."
+  fi
+
+  fetch "$asset_base/SHA256SUMS" "$checksums" || fail 'Could not download checksums.'
+  checksum_line="$(cat "$checksums")"
+  [ "$checksum_line" = "$manifest_sha256  site.tar.gz" ] || \
+    fail 'Checksum file does not match the manifest.'
+  fetch "$asset_base/site.tar.gz" "$archive" || fail 'Could not download site archive.'
+
+  archive_size="$(wc -c < "$archive" | tr -d ' ')"
+  [ "$archive_size" -le "$MAX_ARCHIVE_BYTES" ] || fail 'Site archive exceeds the configured size limit.'
+  actual_sha256="$(sha256sum "$archive" | awk '{print $1}')"
+  [ "$actual_sha256" = "$manifest_sha256" ] || fail 'Site archive checksum verification failed.'
+
+  member_list="$work_dir/archive-members.txt"
+  tar -tzf "$archive" > "$member_list" || fail 'Site archive cannot be listed.'
+  if grep -Eq '(^/|(^|/)\.\.(/|$))' "$member_list"; then
+    fail 'Site archive contains an unsafe path.'
+  fi
+
+  staging="$RELEASES_DIR/.staging-$commit-$$"
+  release="$RELEASES_DIR/$commit"
+  rm -rf "$staging"
+  mkdir "$staging"
+  tar -xzf "$archive" -C "$staging" || fail 'Site archive extraction failed.'
+  [ -s "$staging/index.html" ] || fail 'Staged site has no index.html.'
+  printf '%s\n' "$commit" > "$staging/.deploy-commit"
+  rm -rf "$release"
+  mv "$staging" "$release"
+
+  old_target="$(link_target "$CURRENT_LINK")"
+  replace_link "$CURRENT_LINK" "releases/$commit"
+  if ! health_check; then
+    if [ -n "$old_target" ]; then
+      replace_link "$CURRENT_LINK" "$old_target"
+    else
+      rm -f "$CURRENT_LINK"
+    fi
+    fail 'Health check failed after activation. The previous release was restored.'
+  fi
+
+  if [ -n "$old_target" ]; then
+    replace_link "$PREVIOUS_LINK" "$old_target"
+  fi
+  printf '%s\n' "$manifest_run_id" > "$LAST_RUN_FILE.new"
+  mv -f "$LAST_RUN_FILE.new" "$LAST_RUN_FILE"
+  cleanup_releases "$release" "$old_target"
+  log "Activated commit $commit."
+}
+
+rollback() {
+  acquire_lock
+  previous="$(link_target "$PREVIOUS_LINK")"
+  [ -n "$previous" ] || fail 'No previous release is available.'
+  [ -d "$SITE_ROOT/$previous" ] || fail 'Previous release directory is missing.'
+  current="$(link_target "$CURRENT_LINK")"
+  replace_link "$CURRENT_LINK" "$previous"
+  if ! health_check; then
+    [ -n "$current" ] && replace_link "$CURRENT_LINK" "$current"
+    fail 'Rollback health check failed. The original release was restored.'
+  fi
+  [ -n "$current" ] && replace_link "$PREVIOUS_LINK" "$current"
+  log "Rolled back to $(basename "$previous")."
+}
+
+status() {
+  printf 'current=%s\n' "$(link_target "$CURRENT_LINK")"
+  printf 'previous=%s\n' "$(link_target "$PREVIOUS_LINK")"
+  if [ -r "$LAST_RUN_FILE" ]; then
+    printf 'last_run_id=%s\n' "$(cat "$LAST_RUN_FILE")"
+  else
+    printf 'last_run_id=0\n'
+  fi
+}
+
+case "${1:-check}" in
+  check|deploy) deploy_latest ;;
+  rollback) rollback ;;
+  status) status ;;
+  *) echo "Usage: $0 {check|deploy|rollback|status}" >&2; exit 2 ;;
+esac
