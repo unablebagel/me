@@ -1,0 +1,31 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { withBase } from '@/utils/url';
+
+interface Props {
+  entry: CollectionEntry<'ctf'>;
+}
+
+const { entry } = Astro.props;
+const { title, summary, category, tags } = entry.data;
+---
+
+<a
+  href={withBase(`/work/ctf-challenges/${entry.id}`)}
+  class="group border-line hover:border-signal flex h-full flex-col gap-3 border p-5 transition-colors"
+>
+  <span class="text-signal font-mono text-[11px] tracking-wider uppercase">{category}</span>
+  <span class="font-display text-ink group-hover:text-signal text-lg transition-colors">
+    {title}
+  </span>
+  <span class="text-ink-soft text-sm">{summary}</span>
+  <span class="mt-auto flex items-center justify-between pt-2">
+    <span class="text-ink-soft font-mono text-[11px]">{tags.slice(0, 2).join(' · ')}</span>
+    <span
+      aria-hidden="true"
+      class="text-ink-soft group-hover:text-signal transition-all group-hover:translate-x-1"
+    >
+      →
+    </span>
+  </span>
+</a>

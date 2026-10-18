@@ -2,6 +2,7 @@
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Button from '@/components/Button.astro';
+import CtfCard from '@/components/CtfCard.astro';
 import { formatDate } from '@/utils/formatDate';
 import { withBase } from '@/utils/url';
 
@@ -21,7 +22,13 @@ const { entry } = Astro.props;
 const { title, summary, role, date, tags, url, repo } = entry.data;
 const { Content } = await render(entry);
 
-const formattedDate = formatDate(date, "month-year");
+// The CTF page doubles as an index: it lists its challenges as cards.
+const ctfChallenges =
+  entry.id === 'ctf-challenges'
+    ? (await getCollection('ctf')).sort((a, b) => a.data.order - b.data.order)
+    : [];
+
+const formattedDate =formatDate(date, "month-year");
 ---
 
 <BaseLayout title={title} description={summary}>
@@ -52,6 +59,16 @@ const formattedDate = formatDate(date, "month-year");
     <div class="prose prose-sm sm:prose-base mt-10 max-w-2xl">
       <Content />
     </div>
+
+    {
+      ctfChallenges.length > 0 && (
+        <div class="mt-10 grid gap-4 sm:grid-cols-2">
+          {ctfChallenges.map((challenge) => (
+            <CtfCard entry={challenge} />
+          ))}
+        </div>
+      )
+    }
 
     <div class="mt-10 flex flex-wrap gap-3">
       {

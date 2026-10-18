@@ -1,0 +1,82 @@
+---
+interface Props {
+  salt: string;
+  hash: string;
+  format?: string;
+}
+
+const { salt, hash, format } = Astro.props;
+---
+
+<form
+  data-flag-form
+  data-salt={salt}
+  data-hash={hash}
+  class="border-line mt-10 border p-5"
+  autocomplete="off"
+>
+  <label for="flag-input" class="text-ink-soft font-mono text-xs">Submit flag</label>
+  <div class="mt-3 flex flex-col gap-3 sm:flex-row">
+    <input
+      id="flag-input"
+      name="flag"
+      type="text"
+      required
+      spellcheck="false"
+      placeholder={format ?? 'flag{...}'}
+      class="border-line text-ink focus:border-signal min-w-0 flex-1 border bg-transparent px-3 py-2 font-mono text-sm outline-none"
+    />
+    <button
+      type="submit"
+      class="border-signal text-signal hover:bg-signal hover:text-paper border px-4 py-2 font-mono text-xs transition-colors disabled:opacity-50"
+    >
+      Submit
+    </button>
+  </div>
+  <p data-flag-result role="status" aria-live="polite" class="mt-3 min-h-5 font-mono text-xs"></p>
+</form>
+
+<script>
+  const ITERATIONS = 600_000;
+  const hex = (buf: ArrayBuffer) =>
+    [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  const unhex = (s: string) => Uint8Array.from(s.match(/../g) ?? [], (h) => parseInt(h, 16));
+
+  async function derive(flag: string, salt: string) {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(flag),
+      'PBKDF2',
+      false,
+      ['deriveBits'],
+    );
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', hash: 'SHA-256', salt: unhex(salt), iterations: ITERATIONS },
+      key,
+      256,
+    );
+    return hex(bits);
+  }
+
+  document.querySelectorAll<HTMLFormElement>('[data-flag-form]').forEach((form) => {
+    const input = form.querySelector('input')!;
+    const button = form.querySelector('button')!;
+    const result = form.querySelector<HTMLElement>('[data-flag-result]')!;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      button.disabled = true;
+      result.textContent = 'Checking…';
+      result.className = 'mt-3 min-h-5 font-mono text-xs text-ink-soft';
+      try {
+        const ok = (await derive(input.value.trim(), form.dataset.salt!)) === form.dataset.hash;
+        result.textContent = ok ? '✓ Correct — flag captured!' : '✗ Incorrect, try again.';
+        result.className = `mt-3 min-h-5 font-mono text-xs ${ok ? 'text-signal' : 'text-ink-soft'}`;
+      } catch {
+        result.textContent = 'Could not verify (needs a secure context / modern browser).';
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+</script>
